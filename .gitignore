@@ -19,6 +19,20 @@ target3/
 native/opennow-streamer/bin/opennow-streamer.exe
 native/opennow-streamer/bin/*/*
 
+# Gradle/Android build outputs
+.gradle/
+build/
+**/build/
+*.apk
+*.ap_
+*.aab
+local.properties
+# gradle.properties is project config - keep it
+# test/ directories are source - keep them
+gradlew
+gradlew.bat
+gradle/
+
 # IDE
 .idea/
 .vscode/
@@ -47,8 +61,8 @@ nul
 *.tokens.json
 gfn_tokens.json
 
-# Test files
-test/
+# Test files (original repo root test/, not Android module test)
+# Note: test/ directories in Android modules are source code and should be tracked
 
 # AI Agent guidelines (local only)
 AGENTS.md

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+    
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">cloudmatch.nvidia.com</domain>
+        <domain includeSubdomains="true">login.nvgs.nvidia.com</domain>
+        <domain includeSubdomains="true">api.opennow.example.com</domain>
+        <pin-set expiration="2026-01-01">
+            <pin algorithm="SHA-256">BASE64_PIN_1</pin>
+            <pin algorithm="SHA-256">BASE64_PIN_2</pin>
+        </pin-set>
+    </domain-config>
+    
+    <debug-overrides>
+        <trust-anchors>
+            <certificates src="user" />
+        </trust-anchors>
+    </debug-overrides>
+</network-security-config>

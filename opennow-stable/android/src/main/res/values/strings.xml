@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">OpenNOW</string>
+    <string name="streaming_notification_title">OpenNOW Streaming</string>
+    <string name="streaming_notification_text">Cloud gaming session active</string>
+    <string name="thermal_warning_title">Device Overheating</string>
+    <string name="thermal_warning_message">Performance reduced to protect device. Session may be paused if temperature continues to rise.</string>
+    <string name="permission_rationale_bluetooth">Bluetooth permission needed for gamepad connectivity</string>
+    <string name="permission_rationale_microphone">Microphone permission needed for voice chat</string>
+    <string name="error_no_hw_decoder">No hardware decoder available for selected codec</string>
+    <string name="error_session_failed">Streaming session failed to start</string>
+    <string name="error_network_unavailable">Network connection unavailable</string>
+</resources>
