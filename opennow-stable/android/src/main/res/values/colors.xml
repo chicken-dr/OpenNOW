@@ -1,8 +1,8 @@
 <resources>
-    <color name="opennow_green">#00FF00</color>
-    <color name="opennow_green_dark">#00CC00</color>
-    <color name="opennow_blue">#0078D4</color>
-    <color name="opennow_blue_dark">#005A9E</color>
+    <color name="closenow_green">#00FF00</color>
+    <color name="closenow_green_dark">#00CC00</color>
+    <color name="closenow_blue">#0078D4</color>
+    <color name="closenow_blue_dark">#005A9E</color>
     <color name="white">#FFFFFF</color>
     <color name="black">#000000</color>
     <color name="transparent">#00000000</color>

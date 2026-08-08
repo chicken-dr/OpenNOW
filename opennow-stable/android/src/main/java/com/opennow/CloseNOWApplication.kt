@@ -2,7 +2,7 @@ package com.opennow
 
 import android.app.Application
 
-class OpenNOWApplication : Application() {
+class CloseNOWApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()

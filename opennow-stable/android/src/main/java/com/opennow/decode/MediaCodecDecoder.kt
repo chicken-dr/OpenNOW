@@ -53,7 +53,7 @@ class MediaCodecDecoder constructor(
             val looper = android.os.Looper.myLooper()
             if (looper != null) {
                 handler = android.os.Handler(looper)
-                threadManager.registerHandler("OpenNOW-Decoder", handler!!)
+                threadManager.registerHandler("CloseNOW-Decoder", handler!!)
                 android.os.Looper.loop()
             }
         }

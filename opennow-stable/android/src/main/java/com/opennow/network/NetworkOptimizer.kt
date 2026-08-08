@@ -20,7 +20,7 @@ class NetworkOptimizer constructor(
     fun acquireGamingWifiLock() {
         val wifiManager = context.getSystemService(Context.WIFI_SERVICE) as WifiManager
         wifiLock = wifiManager.createWifiLock(
-            WifiManager.WIFI_MODE_FULL_HIGH_PERF, "OpenNOW-Gaming"
+            WifiManager.WIFI_MODE_FULL_HIGH_PERF, "CloseNOW-Gaming"
         ).apply { acquire() }
         Log.i("NetworkOptimizer", "Acquired gaming Wi-Fi lock (HIGH_PERF)")
     }

@@ -41,7 +41,7 @@
                 android:textColor="@color/stats_text"
                 android:textSize="12sp"
                 android:fontFamily="monospace"
-                android:text="Initializing..." />
+                android:text="@string/initializing" />
 
         </FrameLayout>
 
@@ -62,7 +62,7 @@
                 android:layout_height="wrap_content"
                 android:textColor="@color/white"
                 android:textSize="12sp"
-                android:text="Connecting..." />
+                android:text="@string/connecting" />
 
         </FrameLayout>
 

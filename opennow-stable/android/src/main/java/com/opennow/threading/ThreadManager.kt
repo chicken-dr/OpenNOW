@@ -23,19 +23,19 @@ class ThreadManager constructor(
     private val handlers = mutableMapOf<String, Handler>()
 
     fun createNetworkThread(runnable: Runnable): Thread {
-        return createThread("OpenNOW-Network", runnable, Priority.URGENT_AUDIO, true)
+        return createThread("CloseNOW-Network", runnable, Priority.URGENT_AUDIO, true)
     }
 
     fun createDecoderThread(runnable: Runnable): Thread {
-        return createThread("OpenNOW-Decoder", runnable, Priority.HIGH, true)
+        return createThread("CloseNOW-Decoder", runnable, Priority.HIGH, true)
     }
 
     fun createInputThread(runnable: Runnable): Thread {
-        return createThread("OpenNOW-Input", runnable, Priority.MAX_PRIORITY, true)
+        return createThread("CloseNOW-Input", runnable, Priority.MAX_PRIORITY, true)
     }
 
     fun createCoordinationThread(runnable: Runnable): Thread {
-        return createThread("OpenNOW-Coordination", runnable, Priority.NORMAL, false)
+        return createThread("CloseNOW-Coordination", runnable, Priority.NORMAL, false)
     }
 
     private fun createThread(

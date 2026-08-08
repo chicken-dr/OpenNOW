@@ -5,6 +5,7 @@ import android.util.Log
 import android.view.MotionEvent
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import com.closenow.R
 import com.opennow.decode.DecoderSelector
 import com.opennow.decode.MediaTekWorkaround
 import com.opennow.device.DeviceOptimizer

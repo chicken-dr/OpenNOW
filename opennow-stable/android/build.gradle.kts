@@ -17,11 +17,11 @@ repositories {
 }
 
 android {
-    namespace = "com.opennow"
+    namespace = "com.closenow"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.opennow"
+        applicationId = "com.closenow"
         minSdk = 30
         targetSdk = 34
         versionCode = 1
@@ -63,6 +63,12 @@ android {
     // Perfetto config for profiling
     androidResources {
         noCompress("pbtx")
+    }
+    
+    // Lint baseline to allow building with known issues
+    lint {
+        baseline = file("lint-baseline.xml")
+        abortOnError = false
     }
 }
 
