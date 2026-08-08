@@ -10,6 +10,10 @@ repositories {
     google()
     mavenCentral()
     maven { url = uri("https://jitpack.io") }
+    maven { url = uri("https://maven.google.com") }
+    maven { url = uri("https://plugins.gradle.org/m2/") }
+    maven { url = uri("https://oss.sonatype.org/content/repositories/snapshots/") }
+    maven { url = uri("https://repo1.maven.org/maven2/") }
 }
 
 android {
@@ -89,14 +93,12 @@ dependencies {
     // Serialization for shared types
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
     
-    // WebRTC Android SDK - temporarily commented out for Phase 1 build verification
-    // implementation("org.webrtc:google-webrtc:1.0.32006")
+    // WebRTC Android SDK - Phase 2 real integration
+    // Using Pexip WebRTC (well-maintained fork, available on Maven Central)
+    implementation("com.pexip.webrtc:webrtc:134.0.0")
     
-    // Alternative WebRTC from jitpack if needed
-    // implementation("com.github.webrtc:webrtc:1.0.32006")
-    
-    // For Phase 1, use local stub implementations
-    // WebRTC classes will be implemented as stubs
+    // OkHttp for WebSocket signaling
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
     
     // Testing
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")

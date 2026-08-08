@@ -1,21 +1,264 @@
 package com.opennow.device
 
+import android.content.Context
+import android.media.MediaCodecInfo
+import android.media.MediaCodecList
 import android.os.Build
 import android.util.Log
 import com.opennow.decode.DecoderSelector
 import com.opennow.thermal.QualityController
 
+/**
+ * Universal device capability detection system.
+ * Detects SoC vendor, codec capabilities, display properties, thermal API availability,
+ * and provides safe fallbacks for unknown devices.
+ */
+class DeviceCapabilityDetector private constructor(private val context: Context) {
+
+    data class DeviceInfo(
+        val manufacturer: String = Build.MANUFACTURER,
+        val model: String = Build.MODEL,
+        val hardware: String = Build.HARDWARE,
+        val brand: String = Build.BRAND,
+        val apiLevel: Int = Build.VERSION.SDK_INT,
+        val cpuAbi: String = Build.SUPPORTED_ABIS.firstOrNull() ?: "unknown",
+        val isVendorDetected: Boolean = false,
+        val socVendor: SocVendor = SocVendor.UNKNOWN,
+    )
+
+    enum class SocVendor {
+        QUALCOMM,
+        MEDIATEK,
+        SAMSUNG_EXYNOS,
+        GOOGLE_TENSOR,
+        HISILICON,
+        UNKNOWN
+    }
+
+    data class CodecCapability(
+        val mimeType: String,
+        val codecName: String,
+        val isHardware: Boolean,
+        val isVendor: Boolean,
+        val supportsLowLatency: Boolean,
+        val supportsAdaptivePlayback: Boolean,
+        val supportsTunneledPlayback: Boolean,
+        val colorFormats: IntArray,
+        val profiles: Array<MediaCodecInfo.CodecProfileLevel>,
+        val maxWidth: Int,
+        val maxHeight: Int,
+    )
+
+    data class DisplayInfo(
+        val refreshRate: Float = 60f,
+        val width: Int = 1920,
+        val height: Int = 1080,
+        val supportsHighRefreshRate: Boolean = false,
+    )
+
+    data class ThermalInfo(
+        val thermalApiAvailable: Boolean = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q,
+        val thermalZoneCount: Int = 0,
+    )
+
+    companion object {
+        @Volatile
+        private var INSTANCE: DeviceCapabilityDetector? = null
+
+        fun getInstance(context: Context): DeviceCapabilityDetector {
+            val instance = INSTANCE
+            if (instance != null) return instance
+            return synchronized(this) {
+                val newInstance = DeviceCapabilityDetector(context.applicationContext)
+                INSTANCE = newInstance
+                newInstance
+            }
+        }
+    }
+
+    private val deviceInfo: DeviceInfo by lazy { detectDeviceInfo() }
+    private val codecCapabilities: Map<String, CodecCapability> by lazy { detectCodecCapabilities() }
+    private var displayInfo: DisplayInfo = DisplayInfo()
+    private val thermalInfo: ThermalInfo by lazy { detectThermalInfo() }
+
+    fun deviceInfo(): DeviceInfo = deviceInfo
+    fun codecCapabilities(): Map<String, CodecCapability> = codecCapabilities
+    fun displayInfo(): DisplayInfo = displayInfo
+    fun thermalInfo(): ThermalInfo = thermalInfo
+
+    fun getBestDecoderFor(mimeType: String): CodecCapability? {
+        return codecCapabilities[mimeType]
+    }
+
+    fun getPreferredCodecOrder(): List<String> {
+        val mimeTypes = listOf("video/avc", "video/hevc", "video/vp9", "video/av01")
+        return mimeTypes.filter { codecCapabilities.containsKey(it) }
+    }
+
+    fun updateDisplayInfo(refreshRate: Float, width: Int, height: Int) {
+        // Called from GameSurfaceView when surface is created
+        displayInfo = DisplayInfo(
+            refreshRate = refreshRate,
+            width = width,
+            height = height,
+            supportsHighRefreshRate = refreshRate > 60f
+        )
+    }
+
+    private fun detectDeviceInfo(): DeviceInfo {
+        val hardware = Build.HARDWARE.lowercase()
+        var vendor = SocVendor.UNKNOWN
+        var isVendorDetected = false
+
+        when {
+            hardware.contains("qcom") || hardware.contains("sdm") || hardware.contains("sm8") || hardware.contains("sm7") || hardware.contains("sm6") -> {
+                vendor = SocVendor.QUALCOMM
+                isVendorDetected = true
+            }
+            hardware.contains("mtk") || hardware.contains("mt6") -> {
+                vendor = SocVendor.MEDIATEK
+                isVendorDetected = true
+            }
+            hardware.contains("exynos") || hardware.contains("s5e") -> {
+                vendor = SocVendor.SAMSUNG_EXYNOS
+                isVendorDetected = true
+            }
+            hardware.contains("google") || hardware.contains("gs") -> {
+                vendor = SocVendor.GOOGLE_TENSOR
+                isVendorDetected = true
+            }
+            hardware.contains("kirin") || hardware.contains("hi36") -> {
+                vendor = SocVendor.HISILICON
+                isVendorDetected = true
+            }
+        }
+
+        Log.i("DeviceCapabilityDetector", "Detected SoC vendor: $vendor (hardware: ${Build.HARDWARE})")
+        
+        return DeviceInfo(
+            isVendorDetected = isVendorDetected,
+            socVendor = vendor,
+        )
+    }
+
+    private fun detectCodecCapabilities(): Map<String, CodecCapability> {
+        val list = MediaCodecList(MediaCodecList.REGULAR_CODECS)
+        val mimeTypes = listOf("video/avc", "video/hevc", "video/vp9", "video/av01")
+        val results = mutableMapOf<String, CodecCapability>()
+
+        for (mime in mimeTypes) {
+            var bestCap: CodecCapability? = null
+
+            for (info in list.codecInfos) {
+                if (info.isEncoder) continue
+
+                val caps = info.getCapabilitiesForType(mime)
+                if (caps == null) continue
+
+                val isHardware = if (Build.VERSION.SDK_INT >= 29) {
+                    info.isHardwareAccelerated()
+                } else {
+                    !info.name.startsWith("OMX.google") && !info.name.startsWith("c2.android")
+                }
+
+                if (!isHardware) continue
+
+                val isVendor = if (Build.VERSION.SDK_INT >= 29) {
+                    info.isVendor()
+                } else {
+                    info.name.contains("vendor") || info.name.contains(".c2.")
+                }
+
+                val supportsLowLatency = caps.isFeatureSupported(MediaCodecInfo.CodecCapabilities.FEATURE_LowLatency)
+                val supportsAdaptivePlayback = caps.isFeatureSupported(MediaCodecInfo.CodecCapabilities.FEATURE_AdaptivePlayback)
+                val supportsTunneledPlayback = caps.isFeatureSupported(MediaCodecInfo.CodecCapabilities.FEATURE_TunneledPlayback)
+
+                val profileLevels = caps.profileLevels
+                var maxWidth = 0
+                var maxHeight = 0
+                if (profileLevels != null) {
+                    for (pl in profileLevels) {
+                        // CodecProfileLevel width/height may not be accessible in all API levels
+                        // Skip extraction for compatibility
+                    }
+                }
+
+                val cap = CodecCapability(
+                    mimeType = mime,
+                    codecName = info.name,
+                    isHardware = isHardware,
+                    isVendor = isVendor,
+                    supportsLowLatency = supportsLowLatency,
+                    supportsAdaptivePlayback = supportsAdaptivePlayback,
+                    supportsTunneledPlayback = supportsTunneledPlayback,
+                    colorFormats = caps.colorFormats,
+                    profiles = profileLevels,
+                    maxWidth = maxWidth,
+                    maxHeight = maxHeight,
+                )
+
+                // Prefer vendor codec, then low-latency, then any hardware
+                if (bestCap == null ||
+                    (cap.isVendor && !bestCap.isVendor) ||
+                    (cap.supportsLowLatency && !bestCap.supportsLowLatency) ||
+                    (cap.maxWidth > bestCap.maxWidth)) {
+                    bestCap = cap
+                }
+            }
+
+            bestCap?.let { results[mime] = it }
+        }
+
+        for ((mime, cap) in results) {
+            Log.i("DeviceCapabilityDetector", "Codec $mime: ${cap.codecName} HW=${cap.isHardware} Vendor=${cap.isVendor} LowLatency=${cap.supportsLowLatency} Adaptive=${cap.supportsAdaptivePlayback} Max=${cap.maxWidth}x${cap.maxHeight}")
+        }
+
+        return results
+    }
+
+    private fun detectDisplayInfo(): DisplayInfo {
+        // This would typically use WindowManager to get display metrics
+        // For now, return defaults - actual values set when SurfaceView is created
+        return DisplayInfo()
+    }
+
+    private fun detectThermalInfo(): ThermalInfo {
+        var zoneCount = 0
+        try {
+            // Try to read thermal zones from sysfs
+            java.io.File("/sys/class/thermal").listFiles()?.forEach { file ->
+                if (file.name.startsWith("thermal_zone")) zoneCount++
+            }
+        } catch (e: Exception) {
+            // Ignore - thermal info not available
+        }
+
+        return ThermalInfo(
+            thermalApiAvailable = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q,
+            thermalZoneCount = zoneCount,
+        )
+    }
+}
+
+/**
+ * DeviceOptimizer applies vendor-specific optimizations based on detected capabilities.
+ * This is a compatibility wrapper for Phase 1/2 code that expects DeviceOptimizer.
+ */
 class DeviceOptimizer constructor(
     private val decoderSelector: DecoderSelector,
     private val qualityController: QualityController,
+    private val context: Context,
 ) {
+    private val capabilityDetector = DeviceCapabilityDetector.getInstance(context)
 
     fun applyOptimizations() {
-        when {
-            isSnapdragon() -> QualcommOptimizer.apply(decoderSelector, qualityController)
-            isMediaTek() -> MediaTekOptimizer.apply(decoderSelector, qualityController)
-            isExynos() -> ExynosOptimizer.apply(decoderSelector, qualityController)
-            isTensor() -> TensorOptimizer.apply(decoderSelector, qualityController)
+        val deviceInfo = capabilityDetector.deviceInfo()
+        
+        when (deviceInfo.socVendor) {
+            DeviceCapabilityDetector.SocVendor.QUALCOMM -> QualcommOptimizer.apply(deviceInfo, decoderSelector, qualityController)
+            DeviceCapabilityDetector.SocVendor.MEDIATEK -> MediaTekOptimizer.apply(deviceInfo, decoderSelector, qualityController)
+            DeviceCapabilityDetector.SocVendor.SAMSUNG_EXYNOS -> ExynosOptimizer.apply(deviceInfo, decoderSelector, qualityController)
+            DeviceCapabilityDetector.SocVendor.GOOGLE_TENSOR -> TensorOptimizer.apply(deviceInfo, decoderSelector, qualityController)
             else -> Log.i("DeviceOptimizer", "No specific optimizations for hardware: ${Build.HARDWARE}")
         }
     }
@@ -24,121 +267,6 @@ class DeviceOptimizer constructor(
         // Default: allow all decoders
         return true
     }
-
-    private fun isSnapdragon(): Boolean =
-        Build.HARDWARE.lowercase().contains("qcom") ||
-        Build.HARDWARE.lowercase().contains("sdm") ||
-        Build.HARDWARE.lowercase().contains("sm8") ||
-        Build.HARDWARE.lowercase().contains("sm7")
-
-    private fun isMediaTek(): Boolean =
-        Build.HARDWARE.lowercase().contains("mtk") ||
-        Build.HARDWARE.lowercase().contains("mt6")
-
-    private fun isExynos(): Boolean =
-        Build.HARDWARE.lowercase().contains("exynos") ||
-        Build.HARDWARE.lowercase().contains("s5e")
-
-    private fun isTensor(): Boolean =
-        Build.HARDWARE.lowercase().contains("google") ||
-        Build.HARDWARE.lowercase().contains("gs")
-}
-
-// QualcommOptimizer.kt
-object QualcommOptimizer {
-    fun apply(decoderSelector: DecoderSelector, qualityController: QualityController) {
-        // Venus VPU: Enable low-latency (well supported on Gen 2+)
-        // Use vendor MediaCodec keys for LTR control if needed
-        // Independent VPU thermal zone - monitor separately via thermal zones
-
-        val isGen2Plus = isSnapdragonGen2Plus()
-        if (isGen2Plus) {
-            decoderSelector.enableLowLatencyForAll()
-            qualityController.setVpuThermalZoneIndependent(true)
-        }
-    }
-
-    private fun isSnapdragonGen2Plus(): Boolean {
-        return Build.HARDWARE.lowercase().let { hw ->
-            hw.contains("sm84") || hw.contains("sm85") || hw.contains("sm86") ||
-            hw.contains("sm74") || hw.contains("sm75")  // 7+ Gen 1/2
-        }
-    }
-}
-
-// MediaTekOptimizer.kt
-object MediaTekOptimizer {
-    fun apply(decoderSelector: DecoderSelector, qualityController: QualityController) {
-        // Android 15 HEVC workaround (Dimensity 700/900/1080)
-        if (Build.VERSION.SDK_INT >= 35 && isAffectedDimensity()) {
-            decoderSelector.disableHEVCHardware()
-            Log.w("MediaTekOptimizer", "Android 15 HEVC workaround active")
-        }
-
-        // Dimensity 1000/9000/9200/9300: AV1 HW available
-        if (isDimensityFlagship()) {
-            decoderSelector.preferAV1()
-        }
-
-        // Combined CPU/GPU/VPU thermal zone - aggressive quality reduction
-        qualityController.setCombinedThermalZone(true)
-    }
-
-    private fun isAffectedDimensity(): Boolean {
-        return Build.HARDWARE.lowercase().let { hw ->
-            listOf("mt6769", "mt6833", "mt6853", "mt6873").any { hw.contains(it) }
-        }
-    }
-
-    private fun isDimensityFlagship(): Boolean {
-        return Build.HARDWARE.lowercase().let { hw ->
-            listOf("mt6893", "mt6895", "mt6983", "mt6985", "mt6989").any { hw.contains(it) }
-        }
-    }
-}
-
-// ExynosOptimizer.kt
-object ExynosOptimizer {
-    fun apply(decoderSelector: DecoderSelector, qualityController: QualityController) {
-        // Exynos 2200: Test AV1 HW (may fall back to SW)
-        // Exynos 2400: Better sustained, test AV1 HW
-        // Integrated thermal - monitor closely
-        // Limited vendor docs - empirical validation required
-
-        if (isExynos2200()) {
-            decoderSelector.disableAV1()  // Conservative: force HEVC/H.264
-            qualityController.setAggressiveThermalReduction(true)
-        } else if (isExynos2400()) {
-            decoderSelector.enableAV1TestMode()  // Test then enable
-        }
-
-        qualityController.setIntegratedThermalZone(true)
-    }
-
-    private fun isExynos2200(): Boolean = Build.HARDWARE.lowercase().contains("s5e9925")
-    private fun isExynos2400(): Boolean = Build.HARDWARE.lowercase().contains("s5e9945")
-}
-
-// TensorOptimizer.kt
-object TensorOptimizer {
-    fun apply(decoderSelector: DecoderSelector, qualityController: QualityController) {
-        // Tensor G3+: AV1 HW decode preferred
-        // Good platform integration - thermal zones well defined
-        // Pixel vapor chamber effective for sustained
-        // Prefer AV1 > HEVC > H264
-
-        if (isTensorG3Plus()) {
-            decoderSelector.preferAV1()
-            decoderSelector.enableLowLatencyForAll()
-        }
-
-        qualityController.setVpuThermalZoneIndependent(true)
-    }
-
-    private fun isTensorG3Plus(): Boolean {
-        // Tensor G3 = "gs301", G4 = "gs401"
-        return Build.HARDWARE.lowercase().let { hw ->
-            hw.contains("gs3") || hw.contains("gs4")
-        }
-    }
+    
+    fun getCapabilityDetector(): DeviceCapabilityDetector = capabilityDetector
 }

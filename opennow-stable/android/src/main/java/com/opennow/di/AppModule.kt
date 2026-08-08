@@ -30,7 +30,7 @@ class AppContainerImpl constructor(private val context: Context) {
     // Core components - initialized in dependency order
     private val cpuAffinity: CpuAffinity = CpuAffinity()
     private val threadManager: ThreadManager = ThreadManager(cpuAffinity)
-    private val webRTCConfig: WebRTCConfig = WebRTCConfig()
+    private val webRTCConfig: WebRTCConfig = WebRTCConfig(context)
     private val networkOptimizer: NetworkOptimizer = NetworkOptimizer(context)
     private val signalingClient: SignalingClient = SignalingClient()
     private val webRTCNetworkManager: WebRTCNetworkManager = WebRTCNetworkManager(webRTCConfig, networkOptimizer, signalingClient)
@@ -39,7 +39,7 @@ class AppContainerImpl constructor(private val context: Context) {
     private val decoderSelector: DecoderSelector by lazy { DecoderSelector(deviceOptimizer) }
     private val qualityController: QualityController by lazy { QualityController(decoder, webRTCNetworkManager, sessionManager) }
     private val thermalManager: ThermalManager by lazy { ThermalManager(qualityController, decoder, webRTCNetworkManager, context) }
-    private val deviceOptimizer: DeviceOptimizer by lazy { DeviceOptimizer(decoderSelector, qualityController) }
+    private val deviceOptimizer: DeviceOptimizer by lazy { DeviceOptimizer(decoderSelector, qualityController, context) }
     private val decoder: MediaCodecDecoder by lazy { MediaCodecDecoder(decoderSelector, webRTCNetworkManager, threadManager) }
     private val sessionManager: SessionManager by lazy { SessionManager(decoder, webRTCNetworkManager, qualityController, thermalManager) }
     private val inputProcessor: InputProcessor by lazy { InputProcessor(networkSender, threadManager) }
