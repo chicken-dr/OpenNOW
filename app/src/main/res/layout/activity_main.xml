@@ -7,7 +7,7 @@
     tools:context=".MainActivity">
 
     <!-- Game Surface View - Zero-copy path to SurfaceFlinger/HWC -->
-    <com.opennow.render.GameSurfaceView
+    <com.closenow.render.GameSurfaceView
         android:id="@+id/gameSurfaceView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
