@@ -35,7 +35,7 @@ class MainActivity : AppCompatActivity() {
         deviceOptimizer = appContainer.deviceOptimizer()
         
         // Set the game surface view in container
-        val gameSurfaceView = findViewById<android.view.View>(android.R.id.content) as GameSurfaceView
+        val gameSurfaceView = findViewById<GameSurfaceView>(R.id.gameSurfaceView)
         appContainer.setGameSurfaceView(gameSurfaceView)
         
         // Set input processor on session manager
