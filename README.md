@@ -1,35 +1,23 @@
-<h1 align="center">OpenNOW</h1>
+<h1 align="center">CloseNOW</h1>
 
 <p align="center">
-  <img src="logo.png" alt="OpenNOW logo" width="180" />
+  <img src="app/src/main/res/mipmap-xxxhdpi/ic_launcher.png" alt="CloseNOW logo" width="180" />
 </p>
 
 <p align="center">
-  <strong>An open-source desktop client for GeForce NOW.</strong>
+  <strong>An Android-first cloud gaming client for GeForce NOW.</strong>
 </p>
 
 <p align="center">
-  Browse the catalog, tune your stream, and launch sessions from a community-built app.
+  <strong>Built for minimal latency, optimal power efficiency, and sustained thermal performance.</strong>
 </p>
 
 <p align="center">
-  <a href="https://github.com/OpenCloudGaming/OpenNOW/releases">
-    <img src="https://img.shields.io/github/v/tag/OpenCloudGaming/OpenNOW?style=for-the-badge&label=Download&color=brightgreen" alt="Download">
+  <a href="https://github.com/chicken-dr/OpenNOW/releases">
+    <img src="https://img.shields.io/github/v/tag/chicken-dr/OpenNOW?style=for-the-badge&label=Download&color=brightgreen" alt="Download">
   </a>
-  <a href="https://testflight.apple.com/join/u1XPJKH2">
-    <img src="https://img.shields.io/badge/iOS-TestFlight-0A84FF?style=for-the-badge&logo=apple&logoColor=white" alt="Download OpenNOW on TestFlight">
-  </a>
-  <a href="https://play.google.com/store/apps/details?id=com.opencloudgaming.opennow">
-    <img src="https://img.shields.io/badge/Android-Google%20Play-3DDC84?style=for-the-badge&logo=android&logoColor=white" alt="Download Android from Google Play">
-  </a>
-  <a href="https://github.com/OpenCloudGaming/OpenNOW-Switch/releases/latest">
-    <img src="https://img.shields.io/github/v/release/OpenCloudGaming/OpenNOW-Switch?style=for-the-badge&label=Nintendo%20Switch&color=E60012&logo=nintendoswitch&logoColor=white" alt="Download OpenNOW for Nintendo Switch">
-  </a>
-  <a href="https://opennow.zortos.me">
-    <img src="https://img.shields.io/badge/Docs-opennow.zortos.me-blue?style=for-the-badge" alt="Documentation">
-  </a>
-  <a href="https://github.com/OpenCloudGaming/OpenNOW/actions/workflows/auto-build.yml">
-    <img src="https://img.shields.io/github/actions/workflow/status/OpenCloudGaming/OpenNOW/auto-build.yml?style=for-the-badge&label=Auto%20Build" alt="Auto Build">
+  <a href="https://github.com/chicken-dr/OpenNOW/actions/workflows/auto-build.yml">
+    <img src="https://img.shields.io/github/actions/workflow/status/chicken-dr/OpenNOW/auto-build.yml?style=for-the-badge&label=Auto%20Build" alt="Auto Build">
   </a>
   <a href="https://discord.gg/8EJYaJcNfD">
     <img src="https://img.shields.io/badge/Discord-Join%20Us-7289da?style=for-the-badge&logo=discord&logoColor=white" alt="Discord">
@@ -37,88 +25,118 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/OpenCloudGaming/OpenNOW/stargazers">
-    <img src="https://img.shields.io/github/stars/OpenCloudGaming/OpenNOW?style=flat-square" alt="Stars">
-  </a>
-  <a href="https://github.com/OpenCloudGaming/OpenNOW/releases">
-    <img src="https://img.shields.io/github/downloads/OpenCloudGaming/OpenNOW/total?style=flat-square" alt="Downloads">
-  </a>
-  <a href="LICENSE">
-    <img src="https://img.shields.io/github/license/OpenCloudGaming/OpenNOW?style=flat-square" alt="License">
-  </a>
+  <img src="app/src/main/res/drawable/banner.png" alt="CloseNOW application preview" />
 </p>
-
-<p align="center">
-  <img src="img.png" alt="OpenNOW application preview" />
-</p>
-
-> [!WARNING]
-> OpenNOW is under active development. Expect occasional bugs, rough edges, and platform-specific issues while the client matures.
->
-> Native streamer / native streaming is experimental. It defaults to the web streamer path unless enabled, issues can be platform-specific, and users may see fallback to Chromium/WebRTC. Report native-streamer problems on [GitHub Issues](https://github.com/OpenCloudGaming/OpenNOW/issues) or [Discord](https://discord.gg/8EJYaJcNfD).
 
 > [!IMPORTANT]
-> OpenNOW is an independent community project and is not affiliated with, endorsed by, or sponsored by NVIDIA. NVIDIA and GeForce NOW are trademarks of NVIDIA Corporation. You must use your own GeForce NOW account.
+> CloseNOW is an independent community project and is not affiliated with, endorsed by, or sponsored by NVIDIA. NVIDIA and GeForce NOW are trademarks of NVIDIA Corporation. You must use your own GeForce NOW account.
 
 ## Overview
 
-OpenNOW is a community-built Electron app for playing GeForce NOW from an open-source desktop client. The active desktop implementation lives in [`opennow-stable/`](opennow-stable).
+CloseNOW is an Android-first cloud gaming client for GeForce NOW, built from the ground up for minimal latency streaming on mobile devices. The implementation targets sub-80ms end-to-end latency through:
+
+- **Direct MediaCodec → Surface rendering** (zero-copy path via BufferQueue)
+- **Hardware decoder prioritization** with vendor-specific optimizations (Qualcomm, MediaTek, Exynos, Tensor)
+- **Choreographer-synchronized frame pacing** for VSYNC-aligned presentation
+- **Thermal-aware adaptive quality** with hysteresis and cooldown logic
+- **High-priority thread architecture** with CPU affinity hints
+- **Perfetto/FrameTimeline integration** for measurement-driven optimization
 
 ## Downloads
 
-Grab the latest desktop build from [GitHub Releases](https://github.com/OpenCloudGaming/OpenNOW/releases).
-
-- iOS beta: [join TestFlight](https://testflight.apple.com/join/u1XPJKH2). The SwiftUI prototype currently lives on the [`kief5555/ios` branch](https://github.com/OpenCloudGaming/OpenNOW/tree/kief5555/ios/ios/OpenNOWiOS) under `ios/OpenNOWiOS/`; that folder is not present on this branch.
-- Android: download from [Google Play](https://play.google.com/store/apps/details?id=com.opencloudgaming.opennow).
-- Nintendo Switch: download the latest native Horizon OS homebrew build from [OpenNOW-Switch Releases](https://github.com/OpenCloudGaming/OpenNOW-Switch/releases/latest). It supports controller-first catalog browsing and native WebRTC streaming with H.264 video, Opus audio, and low-latency input on modded Switch systems.
-
-For macOS users looking for a more performant OpenNOW version, Jayian1890 maintains the separate [OpenNOW-Mac](https://github.com/OpenCloudGaming/OpenNOW-Mac) repository.
+Grab the latest Android build from [GitHub Releases](https://github.com/chicken-dr/OpenNOW/releases).
 
 ## Documentation
 
-Canonical documentation lives at [opennow.zortos.me](https://opennow.zortos.me):
+### Android Architecture & Research
+- [Android Architecture](docs/ANDROID_OPENNOW_ARCHITECTURE.md)
+- [Media Pipeline](docs/ANDROID_MEDIA_PIPELINE.md)
+- [Decoder Research](docs/ANDROID_DECODER_RESEARCH.md)
+- [Rendering Research](docs/ANDROID_RENDERING_RESEARCH.md)
+- [Network Research](docs/ANDROID_NETWORK_RESEARCH.md)
+- [Input Latency](docs/ANDROID_INPUT_LATENCY.md)
+- [Power & Thermal](docs/ANDROID_POWER_THERMAL.md)
+- [Memory Copy Analysis](docs/ANDROID_MEMORY_COPY_ANALYSIS.md)
+- [Threading](docs/ANDROID_THREADING.md)
+- [Diagnostics](docs/ANDROID_DIAGNOSTICS.md)
+- [Low Latency Decoding](docs/ANDROID_LOW_LATENCY_DECODING.md)
 
-- [Getting Started](https://opennow.zortos.me/guides/getting-started/)
-- [Development](https://opennow.zortos.me/development/)
-- [Configuration](https://opennow.zortos.me/reference/configuration/)
-- [WebRTC](https://opennow.zortos.me/reference/webrtc/)
-- [Native Streamer](https://opennow.zortos.me/reference/native-streamer/)
-- [Project Website](https://opennow.zortos.me/)
-
-This repository intentionally does not carry duplicate long-form product, setup, development, native streamer, GStreamer packaging, or release workflow documentation.
+### Implementation Guides
+- [Architecture Review](docs/ANDROID_ARCHITECTURE_REVIEW.md)
+- [Benchmark Plan](docs/ANDROID_BENCHMARK_PLAN.md)
+- [Device Compatibility](docs/ANDROID_DEVICE_COMPATIBILITY.md)
+- [Optimization Master Plan](docs/ANDROID_OPTIMIZATION_MASTER_PLAN.md)
+- [Optimization Roadmap](docs/ANDROID_OPTIMIZATION_ROADMAP.md)
 
 ## Repository Layout
 
 ```text
 .
-├── opennow-stable/          Active Electron desktop client
-├── native/opennow-streamer/ Native Rust streaming infrastructure
-├── locales/                 Crowdin-managed localization files
-├── .github/                 Workflows, templates, and contributor metadata
-├── AGENTS.md                Repository instructions for AI agents and contributors
-├── LICENSE                  Project license
-├── logo.png                 Project logo
-└── img.png                  App preview image
+├── app/                      Android application module
+│   ├── src/
+│   │   ├── main/
+│   │   │   ├── java/com/closenow/  Kotlin source code
+│   │   │   ├── res/                Resources (layouts, strings, themes)
+│   │   │   └── AndroidManifest.xml
+│   │   └── test/                   Unit tests
+│   ├── build.gradle.kts
+│   ├── proguard-rules.pro
+│   └── lint-baseline.xml
+├── gradle/                   Gradle wrapper
+├── docs/                     Android documentation
+├── .github/                  Workflows and templates
+├── AGENTS.md                 Repository instructions
+├── LICENSE                   Project license
+├── README.md                 This file
+├── settings.gradle.kts       Gradle settings
+├── gradle.properties         Gradle configuration
+└── gradlew                   Gradle wrapper script
 ```
 
-## Sponsors
+## Building
 
-OpenNOW's CI usage is generously sponsored by [Blacksmith](https://www.blacksmith.sh/), helping keep builds and releases fast for the open-source project.
+```bash
+# Debug build
+./gradlew assembleDebug
+
+# Release build
+./gradlew assembleRelease
+
+# Run unit tests
+./gradlew testDebugUnitTest
+
+# Run lint
+./gradlew lintDebug
+```
+
+## Architecture Highlights
+
+### Media Pipeline
+- `DecoderSelector` - Hardware decoder discovery and selection
+- `MediaCodecDecoder` - Async MediaCodec with Surface output
+- `GameSurfaceView` - SurfaceView for zero-copy rendering
+- `FramePacer` - Choreographer VSYNC synchronization
+
+### Network & WebRTC
+- `WebRTCNetworkManager` - Pexip WebRTC integration
+- `SignalingClient` - GFN WebSocket signaling
+- `NetworkOptimizer` - Wi-Fi lock, traffic shaping
+
+### Device Optimization
+- `DeviceCapabilityDetector` - SoC vendor detection
+- Vendor-specific optimizers (Qualcomm, MediaTek, Exynos, Tensor)
+- `ThermalManager` - PowerManager thermal API integration
+- `QualityController` - Adaptive quality with hysteresis
+
+### Diagnostics
+- `TelemetryCollector` - Rolling percentiles (P50/P95/P99)
+- `PerfettoTrace` - Trace sections for all pipeline stages
+- `DumpsysCollector` - Post-session state analysis
 
 ## Contributing
 
-Contributions are welcome. Read the [contributing guide](.github/CONTRIBUTING.md), keep changes focused, and explain user-facing impact clearly. When changing localized copy, edit only `locales/en.json`; Crowdin manages the other locale files.
-
-## Star History
-
-<a href="https://www.star-history.com/?repos=OpenCloudGaming%2FOpenNOW&type=date&legend=top-left">
- <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/image?repos=OpenCloudGaming/OpenNOW&type=date&theme=dark&legend=top-left" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/image?repos=OpenCloudGaming/OpenNOW&type=date&legend=top-left" />
-   <img alt="Star History Chart" src="https://api.star-history.com/image?repos=OpenCloudGaming/OpenNOW&type=date&legend=top-left" />
- </picture>
-</a>
+Contributions are welcome. Read the [contributing guide](.github/CONTRIBUTING.md), keep changes focused, and explain user-facing impact clearly.
 
 ## License
 
-OpenNOW is licensed under the [MIT License](LICENSE).
+CloseNOW is licensed under the [MIT License](LICENSE).

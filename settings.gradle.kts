@@ -6,6 +6,6 @@ pluginManagement {
     }
 }
 
-rootProject.name = "OpenNOW"
+rootProject.name = "CloseNOW"
 
-include(":opennow-stable:android")
+include(":app")

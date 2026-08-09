@@ -10,41 +10,48 @@ If a tradeoff is required, choose correctness and robustness over short-term con
 
 ## Repository Layout
 
-- `opennow-stable/` is the Electron app. Main-process code lives in `src/main`, preload bridges in `src/preload`, renderer UI in `src/renderer`, and cross-process TypeScript contracts in `src/shared`.
-- `native/` contains the native streamer implementation and build outputs used by the Electron app. Keep native build changes isolated from Electron refactors unless the task explicitly spans both.
-- `locales/` contains localization sources and generated Crowdin output. See Localization before editing.
-- `OpenNOW-Site/` is a separate repository when present; do not modify it from OpenNOW tasks unless explicitly requested.
+- `app/` is the Android application module. Main source in `app/src/main/java/com/closenow/`, resources in `app/src/main/res/`, manifest in `app/src/main/AndroidManifest.xml`.
+- `docs/` contains Android architecture and research documentation.
+- `.github/` contains workflows and templates.
 
 ## Platform Layout (multi-provider ready)
 
-Cloud streaming providers live under a `platforms/<id>/` folder in each process boundary. GeForce NOW (`gfn`) is the first provider:
+Cloud streaming providers live under `app/src/main/java/com/closenow/platforms/<id>/`. GeForce NOW (`gfn`) is the first provider:
 
-- Main: `opennow-stable/src/main/platforms/gfn/`
-- Renderer stream protocol: `opennow-stable/src/renderer/src/platforms/gfn/`
-- Shared contracts: `opennow-stable/src/shared/gfn/` (barrel `@shared/gfn`)
-- Platform registry/capabilities: `opennow-stable/src/shared/platforms/` and `opennow-stable/src/main/platforms/`
+- Network: `app/src/main/java/com/closenow/network/`
+- Device: `app/src/main/java/com/closenow/device/`
+- Decode: `app/src/main/java/com/closenow/decode/`
+- Render: `app/src/main/java/com/closenow/render/`
+- Session: `app/src/main/java/com/closenow/session/`
+- Thermal: `app/src/main/java/com/closenow/thermal/`
+- Input: `app/src/main/java/com/closenow/input/`
+- Diagnostics: `app/src/main/java/com/closenow/diagnostics/`
+- Threading: `app/src/main/java/com/closenow/threading/`
 
-When adding another provider, create `platforms/<id>/` mirrors and register it in `shared/platforms` — do not sprinkle provider protocol details into app shell, IPC wiring, or unrelated UI modules.
+When adding another provider, create mirrors under `platforms/<id>/` — do not sprinkle provider protocol details into app shell or unrelated modules.
 
 ## Module Boundaries
 
-- Shared GFN main-process protocol details belong under `opennow-stable/src/main/platforms/gfn`. Prefer focused modules with one owner per concern (`clientHeaders.ts` for client identity/header constants, `proxyFetch.ts` for proxy-aware fetches, `proxyUrl.ts` for proxy URL normalization, `request.ts` for common response handling, `endpoints` helpers via `@shared/gfn/endpoints` for public URL construction).
-- Shared GFN DTOs/helpers are split by concern under `opennow-stable/src/shared/gfn/` (`auth`, `catalog`, `session`, `stream`, `api`, …). Import from `@shared/gfn` for stability, or from a focused submodule when that keeps ownership clearer.
-- Do not duplicate NVIDIA/GFN constants, request headers, platform/device ID mapping, auth header construction, proxy behavior, zone URL construction, or error parsing across feature files. Add to or extract a focused shared module first, then consume it from features.
-- Keep feature files (`auth.ts`, `games.ts`, `cloudmatch.ts`, `subscription.ts`, etc.) responsible for product flow and payload shape, not for re-declaring shared client identity or transport details.
-- Preserve provider/alliance behavior, stable device IDs, session refresh semantics, and `SessionError.fromResponse()` handling when refactoring GFN code.
+- Shared GFN protocol details belong under `app/src/main/java/com/closenow/network/`. Prefer focused modules with one owner per concern (`SignalingClient` for WebSocket signaling, `WebRTCNetworkManager` for WebRTC, `WebRTCConfig` for WebRTC configuration, `NetworkOptimizer` for network tuning).
+- Device/capability DTOs/helpers are split by concern under `app/src/main/java/com/closenow/device/` and `app/src/main/java/com/closenow/decode/`. Import from focused submodules when that keeps ownership clearer.
+- Do not duplicate codec selection logic, device detection, thermal handling, or decoder configuration across feature files. Add to or extract a focused shared module first, then consume it from features.
+- Keep feature files responsible for product flow and payload shape, not for re-declaring shared transport or device details.
+- Preserve vendor-specific optimizer behavior, decoder fallback chains, and `QualityController` hysteresis semantics when refactoring.
 
-## Electron Process Boundaries
+## Android Process Boundaries
 
-- Main process owns filesystem, native process management, GFN network/session orchestration, Electron APIs, and security-sensitive logic.
-- Preload exposes the minimal typed bridge needed by the renderer. Do not pass raw Electron or Node primitives into renderer code.
-- Renderer code should stay UI-focused. Do not duplicate main-process GFN networking or native orchestration in React components.
+- Main thread (UI): Activity, SurfaceView, input event dispatch
+- Network thread: WebRTC, signaling, UDP receive
+- Decoder thread: MediaCodec async callbacks
+- Render thread: Frame pacing, Choreographer callbacks
+- Thermal thread: PowerManager thermal callbacks
+- Diagnostics thread: Telemetry, Perfetto, dumpsys collection
 
 ## Shared Contracts
 
-- `opennow-stable/src/shared` is the contract boundary between main, preload, and renderer. Keep public IPC/shared interfaces stable unless the task explicitly requires a contract change.
-- When changing shared types, update every caller across main, preload, and renderer in the same change and run type checks.
-- Avoid using `any` or renderer-only types in shared contracts. Prefer serializable DTOs and explicit unions.
+- `app/src/main/java/com/closenow/` is the contract boundary. Keep public interfaces stable unless the task explicitly requires a contract change.
+- When changing shared types, update every caller in the same change and run type checks.
+- Avoid using `any` or platform-specific types in shared contracts. Prefer serializable DTOs and explicit unions.
 
 ## Maintainability
 
@@ -52,24 +59,21 @@ Long term maintainability is a core priority. If you add new functionality, firs
 
 - Refactors should reduce ownership ambiguity: name the new owner module, move duplicated logic there, and keep behavior equivalent unless a behavior change is requested.
 - Prefer small, typed helpers over broad `utils` modules. If a helper needs knowledge of one protocol or product area, keep it beside that area.
-- Keep compatibility with existing persisted auth/session state unless a migration is explicitly part of the task.
+- Keep compatibility with existing persisted state unless a migration is explicitly part of the task.
 
 ## Localization
 
-Crowdin owns generated translations. When changing localized copy, edit only `locales/en.json` as the source language file. Do not manually edit other `locales/*.json` files; they are generated by Crowdin and should only change through Crowdin sync pull requests.
+Edit only `app/src/main/res/values/strings.xml` as the source language file.
 
 ## Checks
 
-- For TypeScript/Electron changes, run the narrowest relevant smoke check first, then `npm --prefix opennow-stable run typecheck` before finishing when practical.
-- For main-process GFN/session changes, also run `npm --prefix opennow-stable test -- --test-name-pattern gfn` or the closest targeted test command available; if scripts do not support filtering, run `npm --prefix opennow-stable test`.
-- For localization changes, run `npm --prefix opennow-stable run locales:check`.
+- For Android/Kotlin changes, run the narrowest relevant check first, then `./gradlew lintDebug` and `./gradlew testDebugUnitTest` before finishing when practical.
+- For decoder/session changes, also run `./gradlew connectedAndroidTest` if a device/emulator is available.
 - Do not claim completion if the relevant acceptance check fails. Report the failing command and failure point.
 
-## Cursor Cloud specific instructions
+## Build instructions
 
-- All commands run from `opennow-stable/` (or use the root `npm run <script>` wrappers). Dependencies are managed with npm (`package-lock.json`); the `bun.lock` is secondary — do not use bun. Node 22 is required.
-- Standard scripts are defined in `opennow-stable/package.json`: `dev`, `build`, `lint`, `typecheck`, `test`, `locales:check`. Don't duplicate them; use those.
-- Running the app: `npm run dev` (root) launches `electron-vite dev` and opens the Electron window on the desktop `DISPLAY` (`:1`). It is a long-running process — start it in a background/tmux session, not a blocking foreground call.
-- Benign startup noise: in this container Electron logs `Failed to connect to the bus` (dbus) and `vkCreateInstance() failed: -9` / `Failed to create and initialize Vulkan` (GPU). These are expected with no real GPU/dbus and do not indicate failure — the UI still renders and networks fine.
-- OpenNOW is a bring-your-own-account GeForce NOW client: there is no local backend. Full end-to-end gameplay/login requires a real NVIDIA/GFN account. Clicking "Sign in" opens NVIDIA's OAuth page (`login.nvgs.nvidia.com`); the auth/networking path can be exercised up to that external login without credentials.
-- The native Rust streamer in `native/opennow-streamer` is optional and Windows-focused (`npm run native:check` / `native:build` need the Cargo toolchain). It is not required to run or develop the Electron client; the default stream path uses embedded Chromium WebRTC.
+- All commands run from repository root.
+- Dependencies managed with Gradle (`gradle.properties`, `settings.gradle.kts`, `app/build.gradle.kts`).
+- Standard scripts: `./gradlew assembleDebug`, `./gradlew testDebugUnitTest`, `./gradlew lintDebug`.
+- Android SDK 34, NDK r26+, Kotlin 1.9.22, AGP 8.4.0 required.
